@@ -89,7 +89,7 @@ CREATIVE_APPS = [
 EXTRA_APPS = [
     Entry("AnyDesk", "flatpak", "com.anydesk.Anydesk", "Remote desktop · community Flatpak · native package recommended for unattended access", category="MSP/Admin"),
     Entry("RustDesk", "flatpak", "com.rustdesk.RustDesk", "Remote desktop with optional self-hosting", category="MSP/Admin"),
-    Entry("Brave Origin", "guide", "https://brave.com/origin/linux/", "Minimal Brave browser · free on Linux · official distro-specific setup", category="Utilities"),
+    Entry("Brave Origin", "git", "https://github.com/brave/install.sh.git", "Official Origin installer · terminal/password prompts · uses your system package manager", category="Utilities", terminal=True),
     Entry("Discord", "flatpak", "com.discordapp.Discord", "Voice, video and chat for gaming communities", category="Gaming"),
     Entry("GitHub Desktop", "flatpak", "io.github.shiftey.Desktop", "Visual Git client · community Linux port", category="Dev/AI"),
     Entry("Bottles", "flatpak", "com.usebottles.bottles", "Manage Windows apps and Wine environments", category="Utilities"),
@@ -150,6 +150,19 @@ def load_catalogue(root=None):
                     entries.remove(entry)
                 else:
                     entries[entries.index(entry)] = replacement
+    if isinstance(saved, list) or saved.get("version", 2) < 11:
+        for entry in list(entries):
+            if entry.kind == "guide" and entry.source == "https://brave.com/origin/linux/":
+                replacement = Entry(**asdict(next(e for e in EXTRA_APPS if e.name == "Brave Origin")))
+                replacement.favourite = entry.favourite
+                replacement.category = entry.category
+                existing_brave = next((e for e in entries if entry_key(e) == entry_key(replacement)), None)
+                if existing_brave:
+                    existing_brave.favourite = entry.favourite
+                    existing_brave.category = entry.category
+                    entries.remove(entry)
+                else:
+                    entries[entries.index(entry)] = replacement
     for entry in entries:
         entry.validate()
     return entries
@@ -161,7 +174,7 @@ def save_catalogue(entries, root=None):
     root = root or data_dir()
     root.mkdir(parents=True, exist_ok=True)
     temporary = root / "catalogue.json.tmp"
-    temporary.write_text(json.dumps({"version": 10, "entries": [asdict(entry) for entry in entries]}, indent=2) + "\n")
+    temporary.write_text(json.dumps({"version": 11, "entries": [asdict(entry) for entry in entries]}, indent=2) + "\n")
     temporary.replace(root / "catalogue.json")
 
 
@@ -198,6 +211,8 @@ def plan(entry, action, root=None):
             script = (path / entry.installer).resolve()
             if not script.is_relative_to(path.resolve()) or not script.is_file():
                 raise ValueError("Installer not found inside the downloaded repository. Check its README and edit the installer path.")
+            if entry.source == "https://github.com/brave/install.sh.git":
+                return ["env", "FLAVOR=origin", "sh", str(script)], path
             return ["bash", str(script)], path
     elif action == "install" and entry.kind == "flatpak":
         return ["flatpak", "install", "--user", "--noninteractive", "flathub", entry.source], None

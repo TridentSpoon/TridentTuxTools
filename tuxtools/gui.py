@@ -280,6 +280,8 @@ class Window(Adw.ApplicationWindow):
             if css:
                 label.add_css_class(css)
             self.more_box.append(label)
+        if entry.source == "https://github.com/brave/install.sh.git":
+            self.more_box.append(Gtk.Label(label="Runs Brave's official installer with FLAVOR=origin. It may add Brave's package repository and request administrator authentication. Arch-based systems may require paru, pikaur or yay. Equivalent command: curl -fsS https://dl.brave.com/install.sh | FLAVOR=origin sh", xalign=0, wrap=True, selectable=True))
         if entry.source == "https://github.com/seapear/AffinityOnLinux.git":
             self.more_box.append(Gtk.Label(label="Uses the experimental installer linked from the Wine guide. Download Windows (Intel/AMD) MSIX or Enterprise (Intel/AMD) EXE, then select it in the wizard. Requires about 10 GB free space; .NET setup can take 10–20 minutes. Linux compatibility and Canva sign-in may vary. The wizard may offer community fixes; review those options before enabling them.", xalign=0, wrap=True))
             for title, url in (("Download official Affinity installer", "https://www.affinity.studio/download"), ("Read Wine guide", "https://github.com/seapear/AffinityOnLinux/blob/main/Guides/Wine/Guide.md")):

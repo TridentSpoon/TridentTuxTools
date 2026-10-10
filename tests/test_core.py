@@ -252,6 +252,23 @@ class CoreTests(unittest.TestCase):
             self.assertEqual(affinity[0].kind, "git")
             self.assertTrue(affinity[0].favourite)
 
+    def test_brave_origin_upgrade_and_flavour(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            root.joinpath("catalogue.json").write_text(json.dumps({"version": 10, "entries": [{"name": "Brave Origin", "kind": "guide", "source": "https://brave.com/origin/linux/", "favourite": True}]}))
+            entries = core.load_catalogue(root)
+            self.assertEqual(len(entries), 1)
+            entry = entries[0]
+            self.assertTrue(entry.favourite)
+            self.assertTrue(entry.terminal)
+            path = core.checkout(entry, root)
+            path.mkdir(parents=True)
+            path.joinpath("install.sh").write_text("exit 0")
+            command, cwd = core.plan(entry, "install", root)
+            self.assertEqual(command, ["env", "FLAVOR=origin", "sh", str(path / "install.sh")])
+            core.save_catalogue(entries, root)
+            self.assertEqual(core.load_catalogue(root), entries)
+
     def test_azure_is_optional_and_wireshark_maps_to_arch_package(self):
         pwsh = next(e for e in core.BELT_APPS if e.name == "PowerShell")
         self.assertNotIn("--azure", core.install_steps(pwsh)[0].command)

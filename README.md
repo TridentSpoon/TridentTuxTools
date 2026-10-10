@@ -219,7 +219,7 @@ Setup guides are references; Tux Tools does not report them as installed apps.
 Additional entries: AnyDesk and RustDesk (MSP/Admin), Discord (Gaming),
 GitHub Desktop community Linux port (Dev/AI), Bottles and Brave Origin (Utilities).
 AnyDesk uses a community Flatpak; unattended access may need its native package.
-Brave Origin links to official distro setup. Microsoft 365 is a guided, unstable
+Brave Origin runs the official installer in a terminal with FLAVOR=origin. Microsoft 365 is a guided, unstable
 Bottles recipe with an experimental Soda runner and a valid Microsoft licence,
 not an unattended bulk installation. Both Business and Enterprise recipe links
 are in More.
@@ -233,3 +233,7 @@ activation prompts. The wizard controls Wine setup and optional community
 fixes; read its choices and current compatibility notes. Closing the wizard
 without a detected Affinity.exe is reported as incomplete. Open and integrity
 checks cover the application files and launcher, not the entire Wine prefix.
+
+Brave Origin clones the official `brave/install.sh` source repository and runs
+`env FLAVOR=origin sh install.sh`, equivalent to the official download command.
+It uses upstream package-manager setup and may request your password.

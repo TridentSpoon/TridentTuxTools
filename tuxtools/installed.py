@@ -87,6 +87,16 @@ def detect(entry, root=None):
             if exe.is_file():
                 return Installation(True, "Affinity Wine installation detected", command=["env", f"WINEPREFIX={prefix}", "wine", str(exe)], files=[p for p in exe.parent.rglob("*") if p.is_file()], scope="Affinity application files (not the full Wine prefix)")
         return Installation(detail="Affinity.exe not detected; complete the Wine wizard")
+    if entry.kind == "git" and entry.source == "https://github.com/brave/install.sh.git":
+        for directory in desktop_paths():
+            for name in ("brave-origin.desktop", "brave-origin-browser.desktop"):
+                desktop = directory / name
+                if desktop.is_file():
+                    return desktop_installation(desktop)
+        executable = shutil.which("brave-origin")
+        if executable:
+            return Installation(True, "Brave Origin installed", command=[executable], files=[Path(executable).resolve()], scope="Brave Origin entrypoint")
+        return Installation(detail="Brave Origin not detected")
     if entry.kind == "guide":
         return Installation(detail="Guided setup; automatic detection unavailable")
     if entry.kind == "builtin":
