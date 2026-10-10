@@ -208,6 +208,25 @@ class CoreTests(unittest.TestCase):
             core.save_catalogue([], root)
             self.assertEqual(core.load_catalogue(root), [])
 
+    def test_frozen_helpers_and_host_environment(self):
+        import os
+        from tuxtools.runtime import host_environment
+        with patch.object(core.sys, "frozen", True, create=True):
+            self.assertEqual(core.helper_command("appimage"), [core.sys.executable, "--helper", "appimage"])
+            with patch.dict(os.environ, {"LD_LIBRARY_PATH": "/bundle", "LD_LIBRARY_PATH_ORIG": "/host"}):
+                self.assertEqual(host_environment()["LD_LIBRARY_PATH"], "/host")
+
+    def test_v8_catalogue_adds_extra_apps_once(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            root.joinpath("catalogue.json").write_text(json.dumps({"version": 8, "entries": []}))
+            entries = core.load_catalogue(root)
+            self.assertEqual(entries, core.EXTRA_APPS)
+            core.save_catalogue(entries, root)
+            self.assertEqual(core.load_catalogue(root), entries)
+            core.save_catalogue([], root)
+            self.assertEqual(core.load_catalogue(root), [])
+
     def test_azure_is_optional_and_wireshark_maps_to_arch_package(self):
         pwsh = next(e for e in core.BELT_APPS if e.name == "PowerShell")
         self.assertNotIn("--azure", core.install_steps(pwsh)[0].command)

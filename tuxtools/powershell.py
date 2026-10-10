@@ -5,6 +5,10 @@ import json
 import platform
 import re
 import subprocess
+try:
+    from .runtime import host_environment
+except ImportError:
+    from runtime import host_environment
 import tarfile
 import tempfile
 from pathlib import Path
@@ -84,10 +88,10 @@ def install(root, azure=False):
         extract(archive, extracted)
         executable = extracted / "pwsh"
         executable.chmod(executable.stat().st_mode | 0o111)
-        subprocess.run([str(executable), "-NoProfile", "-NonInteractive", "-Command", "$PSVersionTable.PSVersion.ToString()"], check=True)
+        subprocess.run([str(executable), "-NoProfile", "-NonInteractive", "-Command", "$PSVersionTable.PSVersion.ToString()"], env=host_environment(), check=True)
         if azure:
             print("Installing optional Azure PowerShell modules for your user…", flush=True)
-            subprocess.run([str(executable), "-NoProfile", "-NonInteractive", "-Command", AZ_COMMAND], check=True)
+            subprocess.run([str(executable), "-NoProfile", "-NonInteractive", "-Command", AZ_COMMAND], env=host_environment(), check=True)
         version = release["tag_name"].removeprefix("v")
         if not re.fullmatch(r"\d+\.\d+\.\d+", version):
             raise ValueError("Unexpected release version.")
