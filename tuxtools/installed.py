@@ -37,8 +37,10 @@ class Report:
     text: str
 
 
+from .runtime import host_environment
+
 def query(command):
-    return subprocess.run(command, capture_output=True, text=True, timeout=30, errors="replace")
+    return subprocess.run(command, env=host_environment(), capture_output=True, text=True, timeout=30, errors="replace")
 
 
 def share_dir():
@@ -88,7 +90,12 @@ def detect(entry, root=None):
                 result = query(["flatpak", "info", flag, "--show-location", entry.source])
                 if result.returncode == 0:
                     return Installation(True, f"Flatpak installed ({flag[2:]})", command=["flatpak", "run", flag, entry.source], scope="Flatpak deployment metadata")
-        ids = {"dev.zed.Zed": ["dev.zed.Zed.desktop", "zed.desktop"],
+        ids = {"com.anydesk.Anydesk": ["anydesk.desktop"],
+               "com.rustdesk.RustDesk": ["rustdesk.desktop"],
+               "com.discordapp.Discord": ["discord.desktop"],
+               "io.github.shiftey.Desktop": ["github-desktop.desktop"],
+               "com.usebottles.bottles": ["com.usebottles.bottles.desktop", "bottles.desktop"],
+               "dev.zed.Zed": ["dev.zed.Zed.desktop", "zed.desktop"],
                "md.obsidian.Obsidian": ["md.obsidian.Obsidian.desktop", "obsidian.desktop"],
                "org.localsend.localsend_app": ["localsend.desktop", "org.localsend.localsend_app.desktop"],
                "net.davidotek.pupgui2": ["net.davidotek.pupgui2.desktop", "protonup-qt.desktop"],

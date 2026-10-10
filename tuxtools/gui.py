@@ -1,4 +1,5 @@
 """Native GTK4/libadwaita installer frontend."""
+import os
 import shlex
 import threading
 from pathlib import Path
@@ -279,6 +280,11 @@ class Window(Adw.ApplicationWindow):
             if css:
                 label.add_css_class(css)
             self.more_box.append(label)
+        if entry.name == "Microsoft 365 · Bottles setup":
+            self.more_box.append(Gtk.Label(label="Install Bottles, enable its unstable installer catalogue, and choose Microsoft 365 Apps for business or enterprise to match your licence. Use an experimental Soda runner listed in that recipe. This is not Microsoft-supported Linux Office. The recipe disables Office automatic updates; check upstream for maintenance instructions.", xalign=0, wrap=True))
+            enterprise = Gtk.Button(label="Enterprise recipe")
+            enterprise.connect("clicked", lambda *_: Gio.AppInfo.launch_default_for_uri("https://github.com/bottlesdevs/programs/blob/main/Software/microsoft365enterprise.yml", None))
+            self.more_box.append(enterprise)
         if entry.kind == "guide":
             button = Gtk.Button(label="Open setup guide")
             button.connect("clicked", lambda *_: Gio.AppInfo.launch_default_for_uri(entry.source, None))
@@ -604,6 +610,10 @@ class Window(Adw.ApplicationWindow):
         return False
 
     def check_updates(self, *_):
+        if os.environ.get("APPIMAGE"):
+            Gio.AppInfo.launch_default_for_uri("https://github.com/TridentSpoon/TridentTuxTools/releases/latest", None)
+            self.status.set_text("Opened the latest AppImage release. Download the new file and replace your previous AppImage.")
+            return
         if self.busy:
             return
         self.update_button.set_sensitive(False)

@@ -1,5 +1,16 @@
 # Trident's Tux Tools
 
+## Easy download
+
+Download the latest **AppImage** from [Releases](https://github.com/TridentSpoon/TridentTuxTools/releases/latest), make it executable in your file manager, and double-click it. No Python or GTK installation is needed for the frontend.
+
+Initial compatibility target: x86_64 Linux, glibc 2.39+ (Ubuntu 24.04+, current Fedora/Arch/CachyOS), with an X11 or Wayland desktop. This is not a universal binary for every Linux system; ARM and musl/Alpine are not currently supported. If FUSE is unavailable, run `APPIMAGE_EXTRACT_AND_RUN=1 ./TridentTuxTools-*.AppImage`.
+
+The AppImage Updates button opens the latest release download. Replace your old AppImage with the new one; your catalogue remains in your user data folder. System installation tools (Flatpak, Git, npm, system Python for Python libraries, package manager and authentication agent) are required only for the relevant catalogue apps.
+
+Every main-branch push and pull request builds and smoke-tests an AppImage in GitHub Actions. Every `vX.Y.Z` tag publishes that build and SHA256SUMS to a GitHub Release. Bump `tuxtools/__init__.py`, push the change, then tag the same commit with the matching version. Development builds are available as workflow artifacts.
+
+
 A native GTK4/libadwaita installer collection with the same desktop styling as
 AutoFSTAB (Set the Table), N-Able TuxControl and TuxMan. Follows your system's
 light/dark theme. Includes categories, single-click installs and a bulk installation queue.
@@ -204,3 +215,11 @@ MIT/Apache-2.0 licensed; [Linux setup](https://github.com/storytold/artcraft/blo
 requires a Rust/Tauri source build. The software is free, while hosted generation
 can require paid credits or third-party services: [pricing](https://getartcraft.com/pricing).
 Setup guides are references; Tux Tools does not report them as installed apps.
+
+Additional entries: AnyDesk and RustDesk (MSP/Admin), Discord (Gaming),
+GitHub Desktop community Linux port (Dev/AI), Bottles and Brave Origin (Utilities).
+AnyDesk uses a community Flatpak; unattended access may need its native package.
+Brave Origin links to official distro setup. Microsoft 365 is a guided, unstable
+Bottles recipe with an experimental Soda runner and a valid Microsoft licence,
+not an unattended bulk installation. Both Business and Enterprise recipe links
+are in More.

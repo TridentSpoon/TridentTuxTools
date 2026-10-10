@@ -8,6 +8,7 @@ import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from urllib.parse import urlsplit
+from .runtime import host_environment
 
 
 @dataclass
@@ -85,6 +86,16 @@ CREATIVE_APPS = [
     Entry("ArtCraft · Linux setup", "guide", "https://github.com/storytold/artcraft/blob/main/_docs/dev_setup.md", "Free MIT/Apache-2.0 software · Linux source build · hosted AI generation may cost credits", category="Creativity"),
 ]
 
+EXTRA_APPS = [
+    Entry("AnyDesk", "flatpak", "com.anydesk.Anydesk", "Remote desktop · community Flatpak · native package recommended for unattended access", category="MSP/Admin"),
+    Entry("RustDesk", "flatpak", "com.rustdesk.RustDesk", "Remote desktop with optional self-hosting", category="MSP/Admin"),
+    Entry("Brave Origin", "guide", "https://brave.com/origin/linux/", "Minimal Brave browser · free on Linux · official distro-specific setup", category="Utilities"),
+    Entry("Discord", "flatpak", "com.discordapp.Discord", "Voice, video and chat for gaming communities", category="Gaming"),
+    Entry("GitHub Desktop", "flatpak", "io.github.shiftey.Desktop", "Visual Git client · community Linux port", category="Dev/AI"),
+    Entry("Bottles", "flatpak", "com.usebottles.bottles", "Manage Windows apps and Wine environments", category="Utilities"),
+    Entry("Microsoft 365 · Bottles setup", "guide", "https://github.com/bottlesdevs/programs/blob/main/Software/microsoft365business.yml", "Experimental Bottles Business/Enterprise recipes · Microsoft licence required · use supported Soda runner", category="Utilities"),
+]
+
 DEFAULTS = [
     Entry("Set the Table · AutoFSTAB", "git", "https://github.com/TridentSpoon/set-the-table.git", "An auto-mount FSTAB assistant", favourite=True),
     Entry("N-Able TuxControl", "git", "https://github.com/TridentSpoon/NAble-TuxControl.git", "N-able Take Control for Linux", favourite=True),
@@ -98,7 +109,7 @@ DEFAULTS = [
     Entry("Lutris", "flatpak", "net.lutris.Lutris", "Manage games and compatibility tools", category="Gaming"),
     Entry("Steam", "flatpak", "com.valvesoftware.Steam", "Steam games and Proton", category="Gaming"),
     Entry("TMOG", "appimage", "https://tmog.org/rtm/downloads/TaskManagerOG-1.0.0-x86_64.AppImage", "Task Manager OG · portable AppImage · glibc 2.35+", category="Utilities"),
-] + PUBLIC_APPS + BELT_APPS + ADMIN_APPS + DEV_APPS + EDITOR_APPS + CREATIVE_APPS
+] + PUBLIC_APPS + BELT_APPS + ADMIN_APPS + DEV_APPS + EDITOR_APPS + CREATIVE_APPS + EXTRA_APPS
 
 CATEGORIES = ("Dev/AI", "Gaming", "Creativity", "Utilities", "MSP/Admin")
 
@@ -123,7 +134,7 @@ def load_catalogue(root=None):
         entries.extend(Entry(**asdict(entry)) for entry in DEFAULTS if entry_key(entry) not in existing)
     else:
         existing = {entry_key(entry) for entry in entries}
-        additions = (PUBLIC_APPS if saved.get("version", 2) < 3 else []) + (BELT_APPS if saved.get("version", 2) < 4 else []) + (ADMIN_APPS if saved.get("version", 2) < 5 else []) + (DEV_APPS if saved.get("version", 2) < 6 else []) + (EDITOR_APPS if saved.get("version", 2) < 7 else []) + (CREATIVE_APPS if saved.get("version", 2) < 8 else [])
+        additions = (PUBLIC_APPS if saved.get("version", 2) < 3 else []) + (BELT_APPS if saved.get("version", 2) < 4 else []) + (ADMIN_APPS if saved.get("version", 2) < 5 else []) + (DEV_APPS if saved.get("version", 2) < 6 else []) + (EDITOR_APPS if saved.get("version", 2) < 7 else []) + (CREATIVE_APPS if saved.get("version", 2) < 8 else []) + (EXTRA_APPS if saved.get("version", 2) < 9 else [])
         entries.extend(Entry(**asdict(entry)) for entry in additions if entry_key(entry) not in existing)
     for entry in entries:
         entry.validate()
@@ -136,7 +147,7 @@ def save_catalogue(entries, root=None):
     root = root or data_dir()
     root.mkdir(parents=True, exist_ok=True)
     temporary = root / "catalogue.json.tmp"
-    temporary.write_text(json.dumps({"version": 8, "entries": [asdict(entry) for entry in entries]}, indent=2) + "\n")
+    temporary.write_text(json.dumps({"version": 9, "entries": [asdict(entry) for entry in entries]}, indent=2) + "\n")
     temporary.replace(root / "catalogue.json")
 
 
@@ -185,12 +196,18 @@ def plan(entry, action, root=None):
     raise ValueError("Unsupported action.")
 
 
+def helper_command(name):
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--helper", name]
+    return [sys.executable, str(Path(__file__).with_name(name + ".py"))]
+
+
 def run_plan(command, cwd, output):
     if not shutil.which(command[0]):
         raise ValueError(f"Required command is missing: {command[0]}")
     if command[:2] == ["git", "clone"]:
         Path(command[-1]).parent.mkdir(parents=True, exist_ok=True)
-    environment = os.environ.copy()
+    environment = os.environ.copy() if command[0] == sys.executable and getattr(sys, "frozen", False) else host_environment()
     environment["GIT_TERMINAL_PROMPT"] = "0"
     with subprocess.Popen(command, cwd=cwd, env=environment, stdin=subprocess.DEVNULL,
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
@@ -216,7 +233,7 @@ def install_steps(entry, root=None, azure=False):
     if entry.kind == "guide":
         raise ValueError("This tool requires guided setup. Open its setup guide.")
     if entry.kind == "builtin":
-        command = [sys.executable, str(Path(__file__).with_name("powershell.py")), "--root", str(root)]
+        command = [*helper_command("powershell"), "--root", str(root)]
         if azure:
             command.append("--azure")
         return [Step(command)]
@@ -239,10 +256,10 @@ def install_steps(entry, root=None, azure=False):
         return [Step(["npm", "install", "--global", "--prefix", str(Path.home() / ".local"), "--", entry.source])]
     if entry.kind == "python":
         environment = root / "environments" / entry.source
-        return [Step([sys.executable, "-m", "venv", str(environment)]),
+        return [Step([shutil.which("python3") or "python3", "-m", "venv", str(environment)]),
                 Step([str(environment / "bin/python"), "-m", "pip", "install", "--upgrade", "--", entry.source])]
     if entry.kind == "appimage":
-        return [Step([sys.executable, str(Path(__file__).with_name("appimage.py")),
+        return [Step([*helper_command("appimage"),
                       "--name", entry.name, "--url", entry.source, "--root", str(root)])]
     return [Step(plan(entry, "install", root)[0])]
 
@@ -278,7 +295,7 @@ def run_in_terminal(command, cwd, output):
         log = Path(folder) / "log"
         helper = Path(__file__).with_name("terminal.py")
         output("Interactive setup is running in your terminal. Complete its prompts there.\n")
-        run_plan([*launcher, sys.executable, str(helper), str(result), str(log), *command], cwd, output)
+        run_plan([*launcher, *helper_command("terminal"), str(result), str(log), *command], cwd, output)
         if log.exists():
             output(log.read_text(errors="replace"))
         if not result.exists() or result.read_text().strip() != "0":
