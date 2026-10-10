@@ -25,6 +25,8 @@ jobs:
           bash packaging/build-appimage.sh
           desktop-file-validate build/TuxTools.AppDir/*.desktop
           APPIMAGE_EXTRACT_AND_RUN=1 dist/*.AppImage --version
+          APPIMAGE_EXTRACT_AND_RUN=1 dist/*.AppImage --helper appimage --help
+          APPIMAGE_EXTRACT_AND_RUN=1 dist/*.AppImage --helper powershell --help
           APPIMAGE_EXTRACT_AND_RUN=1 GSK_RENDERER=cairo xvfb-run -a dist/*.AppImage --smoke-test
       - uses: actions/upload-artifact@v4
         with:

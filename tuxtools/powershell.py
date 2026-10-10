@@ -108,9 +108,13 @@ def install(root, azure=False):
     print("PowerShell installed. Run pwsh (ensure ~/.local/bin is on PATH).", flush=True)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--azure", action="store_true")
     args = parser.parse_args()
     install(args.root, args.azure)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

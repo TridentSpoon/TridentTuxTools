@@ -1,8 +1,18 @@
 import unittest
+import sys
+from unittest.mock import patch
+from tuxtools import appimage, powershell
 from tuxtools.appimage import resolve_url
 
 
 class AppImageTests(unittest.TestCase):
+    def test_packaged_installers_expose_cli_entrypoints(self):
+        for module in (appimage, powershell):
+            with patch.object(sys, "argv", ["helper", "--help"]):
+                with self.assertRaises(SystemExit) as result:
+                    module.main()
+                self.assertEqual(result.exception.code, 0)
+
     def test_cursor_selects_current_architecture(self):
         html = '<a href="https://api2.cursor.sh/arm">Linux AppImage (ARM64)</a><a href="https://api2.cursor.sh/x64">Linux AppImage (x64)</a>'
         self.assertEqual(resolve_url("https://cursor.com/download", "x64", lambda _: html), "https://api2.cursor.sh/x64")

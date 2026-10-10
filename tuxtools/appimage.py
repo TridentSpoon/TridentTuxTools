@@ -112,10 +112,14 @@ def install(name, source, root):
     print(f"Installed {name}: {target}\nApplication menu launcher: {desktop}", flush=True)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", required=True)
     parser.add_argument("--url", required=True)
     parser.add_argument("--root", type=Path, required=True)
     args = parser.parse_args()
     install(args.name, args.url, args.root)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
