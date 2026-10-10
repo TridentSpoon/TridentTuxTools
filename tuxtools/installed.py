@@ -72,6 +72,21 @@ def desktop_installation(path):
 def detect(entry, root=None):
     entry.validate()
     root = root or core.data_dir()
+    if entry.kind == "git" and entry.source == "https://github.com/seapear/AffinityOnLinux.git":
+        for directory in desktop_paths():
+            desktop = directory / "Affinity.desktop"
+            if desktop.is_file():
+                info = desktop_installation(desktop)
+                exe = next((p for p in info.files if p.name == "Affinity.exe"), None)
+                if exe:
+                    info.files.extend(p for p in exe.parent.rglob("*") if p.is_file() and p not in info.files)
+                    info.scope = "Affinity application files and Wine launcher (not the full Wine prefix)"
+                    return info
+        for prefix in (Path.home() / ".AffinityOnLinux", Path.home() / ".affinity"):
+            exe = prefix / "drive_c/Program Files/Affinity/Affinity/Affinity.exe"
+            if exe.is_file():
+                return Installation(True, "Affinity Wine installation detected", command=["env", f"WINEPREFIX={prefix}", "wine", str(exe)], files=[p for p in exe.parent.rglob("*") if p.is_file()], scope="Affinity application files (not the full Wine prefix)")
+        return Installation(detail="Affinity.exe not detected; complete the Wine wizard")
     if entry.kind == "guide":
         return Installation(detail="Guided setup; automatic detection unavailable")
     if entry.kind == "builtin":

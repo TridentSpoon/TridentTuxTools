@@ -82,7 +82,7 @@ EDITOR_APPS = [
 ]
 
 CREATIVE_APPS = [
-    Entry("Affinity · Linux setup", "guide", "https://github.com/seapear/AffinityOnLinux", "Unofficial Wine setup · no native Linux version · compatibility varies; see current known issues", category="Creativity"),
+    Entry("Affinity · Wine installer", "git", "https://github.com/seapear/AffinityOnLinux.git", "Experimental Wine wizard · select official Windows x64 installer · dependency/password prompts · Canva account required", installer="Guides/Wine/Script Installer/AoL_ScriptInstaller-GameDirection.sh", category="Creativity", terminal=True),
     Entry("ArtCraft · Linux setup", "guide", "https://github.com/storytold/artcraft/blob/main/_docs/dev_setup.md", "Free MIT/Apache-2.0 software · Linux source build · hosted AI generation may cost credits", category="Creativity"),
 ]
 
@@ -136,6 +136,15 @@ def load_catalogue(root=None):
         existing = {entry_key(entry) for entry in entries}
         additions = (PUBLIC_APPS if saved.get("version", 2) < 3 else []) + (BELT_APPS if saved.get("version", 2) < 4 else []) + (ADMIN_APPS if saved.get("version", 2) < 5 else []) + (DEV_APPS if saved.get("version", 2) < 6 else []) + (EDITOR_APPS if saved.get("version", 2) < 7 else []) + (CREATIVE_APPS if saved.get("version", 2) < 8 else []) + (EXTRA_APPS if saved.get("version", 2) < 9 else [])
         entries.extend(Entry(**asdict(entry)) for entry in additions if entry_key(entry) not in existing)
+    # Upgrade the exact old Affinity guide while preserving user preferences.
+    if isinstance(saved, list) or saved.get("version", 2) < 10:
+        for index, entry in enumerate(entries):
+            if entry.kind == "guide" and entry.source == "https://github.com/seapear/AffinityOnLinux":
+                replacement = Entry(**asdict(CREATIVE_APPS[0]))
+                replacement.favourite = entry.favourite
+                replacement.category = entry.category
+                if not any(entry_key(e) == entry_key(replacement) for e in entries):
+                    entries[index] = replacement
     for entry in entries:
         entry.validate()
     return entries
@@ -147,7 +156,7 @@ def save_catalogue(entries, root=None):
     root = root or data_dir()
     root.mkdir(parents=True, exist_ok=True)
     temporary = root / "catalogue.json.tmp"
-    temporary.write_text(json.dumps({"version": 9, "entries": [asdict(entry) for entry in entries]}, indent=2) + "\n")
+    temporary.write_text(json.dumps({"version": 10, "entries": [asdict(entry) for entry in entries]}, indent=2) + "\n")
     temporary.replace(root / "catalogue.json")
 
 
@@ -279,6 +288,10 @@ def run_install(entry, steps, output, root=None):
             command, cwd = plan(entry, "install", root)
             if entry.terminal:
                 run_in_terminal(command, cwd, output)
+                if entry.source == "https://github.com/seapear/AffinityOnLinux.git":
+                    from .installed import detect
+                    if not detect(entry, root).found:
+                        raise RuntimeError("Affinity setup closed without a detected Affinity.exe. Complete the wizard, then retry or check its log.")
                 continue
         import shlex
         output("$ " + shlex.join(command) + "\n")

@@ -280,6 +280,12 @@ class Window(Adw.ApplicationWindow):
             if css:
                 label.add_css_class(css)
             self.more_box.append(label)
+        if entry.source == "https://github.com/seapear/AffinityOnLinux.git":
+            self.more_box.append(Gtk.Label(label="Uses the experimental installer linked from the Wine guide. Download Windows (Intel/AMD) MSIX or Enterprise (Intel/AMD) EXE, then select it in the wizard. Requires about 10 GB free space; .NET setup can take 10–20 minutes. Linux compatibility and Canva sign-in may vary. The wizard may offer community fixes; review those options before enabling them.", xalign=0, wrap=True))
+            for title, url in (("Download official Affinity installer", "https://www.affinity.studio/download"), ("Read Wine guide", "https://github.com/seapear/AffinityOnLinux/blob/main/Guides/Wine/Guide.md")):
+                link = Gtk.Button(label=title)
+                link.connect("clicked", lambda _, target=url: Gio.AppInfo.launch_default_for_uri(target, None))
+                self.more_box.append(link)
         if entry.name == "Microsoft 365 · Bottles setup":
             self.more_box.append(Gtk.Label(label="Install Bottles, enable its unstable installer catalogue, and choose Microsoft 365 Apps for business or enterprise to match your licence. Use an experimental Soda runner listed in that recipe. This is not Microsoft-supported Linux Office. The recipe disables Office automatic updates; check upstream for maintenance instructions.", xalign=0, wrap=True))
             enterprise = Gtk.Button(label="Enterprise recipe")

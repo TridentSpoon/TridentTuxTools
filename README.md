@@ -207,8 +207,8 @@ Zed (`dev.zed.Zed`, community-maintained) and Obsidian (`md.obsidian.Obsidian`)
 install as per-user Flatpaks from Flathub. Existing native desktop launchers
 are also detected for Open.
 
-Creativity includes Affinity and ArtCraft as setup-guide entries, excluded from
-bulk installation. Affinity has no official Linux build; the community
+Creativity includes Affinity as an interactive Wine installer and ArtCraft as a
+setup-guide entry excluded from bulk installation. Affinity has no official Linux build; the community
 [AffinityOnLinux](https://github.com/seapear/AffinityOnLinux) guides describe Wine
 setup and current compatibility issues. ArtCraft's current source is dual
 MIT/Apache-2.0 licensed; [Linux setup](https://github.com/storytold/artcraft/blob/main/_docs/dev_setup.md)
@@ -223,3 +223,13 @@ Brave Origin links to official distro setup. Microsoft 365 is a guided, unstable
 Bottles recipe with an experimental Soda runner and a valid Microsoft licence,
 not an unattended bulk installation. Both Business and Enterprise recipe links
 are in More.
+
+Affinity now has an Install button that clones AffinityOnLinux and opens the
+experimental script installer linked from its Wine guide, in a terminal.
+Download the official Windows x64 MSIX or Enterprise x64 EXE and select it in
+the wizard. Dependency installation may require your password and 10 GB free
+space; .NET setup may take 10–20 minutes. Complete normal Affinity and Canva
+activation prompts. The wizard controls Wine setup and optional community
+fixes; read its choices and current compatibility notes. Closing the wizard
+without a detected Affinity.exe is reported as incomplete. Open and integrity
+checks cover the application files and launcher, not the entire Wine prefix.

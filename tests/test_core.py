@@ -161,7 +161,7 @@ class CoreTests(unittest.TestCase):
             root = Path(folder)
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 4, "entries": []}))
             entries = core.load_catalogue(root)
-            self.assertEqual([e.name for e in entries], ["PuTTY", "Graft", "Zed", "Obsidian", "Affinity · Linux setup", "ArtCraft · Linux setup", *[e.name for e in core.EXTRA_APPS]])
+            self.assertEqual([e.name for e in entries], ["PuTTY", "Graft", "Zed", "Obsidian", "Affinity · Wine installer", "ArtCraft · Linux setup", *[e.name for e in core.EXTRA_APPS]])
             self.assertEqual(entries[0].category, "MSP/Admin")
             core.save_catalogue(entries, root)
             self.assertEqual(core.load_catalogue(root), entries)
@@ -199,7 +199,7 @@ class CoreTests(unittest.TestCase):
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 7, "entries": []}))
             entries = core.load_catalogue(root)
             self.assertEqual(entries, core.CREATIVE_APPS + core.EXTRA_APPS)
-            for entry in core.CREATIVE_APPS:
+            for entry in core.CREATIVE_APPS[1:]:
                 entry.validate()
                 with self.assertRaisesRegex(ValueError, "guided setup"):
                     core.install_steps(entry)
@@ -224,6 +224,21 @@ class CoreTests(unittest.TestCase):
             self.assertEqual(entries, core.EXTRA_APPS)
             core.save_catalogue(entries, root)
             self.assertEqual(core.load_catalogue(root), entries)
+            core.save_catalogue([], root)
+            self.assertEqual(core.load_catalogue(root), [])
+
+    def test_affinity_guide_upgrades_preserving_favourite(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            root.joinpath("catalogue.json").write_text(json.dumps({"version": 9, "entries": [{"name": "Affinity", "kind": "guide", "source": "https://github.com/seapear/AffinityOnLinux", "favourite": True, "category": "Creativity"}]}))
+            entries = core.load_catalogue(root)
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0].kind, "git")
+            self.assertTrue(entries[0].terminal)
+            self.assertTrue(entries[0].favourite)
+            with patch.object(core, "terminal_command", return_value=["konsole"]):
+                steps = core.install_steps(entries[0], root)
+            self.assertEqual(steps[-1].command[-1], str(core.checkout(entries[0], root) / entries[0].installer))
             core.save_catalogue([], root)
             self.assertEqual(core.load_catalogue(root), [])
 
