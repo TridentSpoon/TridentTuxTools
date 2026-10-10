@@ -138,13 +138,18 @@ def load_catalogue(root=None):
         entries.extend(Entry(**asdict(entry)) for entry in additions if entry_key(entry) not in existing)
     # Upgrade the exact old Affinity guide while preserving user preferences.
     if isinstance(saved, list) or saved.get("version", 2) < 10:
-        for index, entry in enumerate(entries):
+        for entry in list(entries):
             if entry.kind == "guide" and entry.source == "https://github.com/seapear/AffinityOnLinux":
                 replacement = Entry(**asdict(CREATIVE_APPS[0]))
                 replacement.favourite = entry.favourite
                 replacement.category = entry.category
-                if not any(entry_key(e) == entry_key(replacement) for e in entries):
-                    entries[index] = replacement
+                existing_affinity = next((e for e in entries if entry_key(e) == entry_key(replacement)), None)
+                if existing_affinity:
+                    existing_affinity.favourite = entry.favourite
+                    existing_affinity.category = entry.category
+                    entries.remove(entry)
+                else:
+                    entries[entries.index(entry)] = replacement
     for entry in entries:
         entry.validate()
     return entries

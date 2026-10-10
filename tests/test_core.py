@@ -242,6 +242,16 @@ class CoreTests(unittest.TestCase):
             core.save_catalogue([], root)
             self.assertEqual(core.load_catalogue(root), [])
 
+    def test_legacy_affinity_upgrade_does_not_duplicate(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            root.joinpath("catalogue.json").write_text(json.dumps({"version": 7, "entries": [{"name": "Affinity", "kind": "guide", "source": "https://github.com/seapear/AffinityOnLinux", "favourite": True}]}))
+            entries = core.load_catalogue(root)
+            affinity = [e for e in entries if "AffinityOnLinux" in e.source]
+            self.assertEqual(len(affinity), 1)
+            self.assertEqual(affinity[0].kind, "git")
+            self.assertTrue(affinity[0].favourite)
+
     def test_azure_is_optional_and_wireshark_maps_to_arch_package(self):
         pwsh = next(e for e in core.BELT_APPS if e.name == "PowerShell")
         self.assertNotIn("--azure", core.install_steps(pwsh)[0].command)
