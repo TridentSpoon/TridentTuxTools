@@ -6,9 +6,9 @@ import platform
 import re
 import subprocess
 try:
-    from .runtime import host_environment
+    from .runtime import host_environment, tls_context
 except ImportError:
-    from runtime import host_environment
+    from runtime import host_environment, tls_context
 import tarfile
 import tempfile
 from pathlib import Path
@@ -21,7 +21,7 @@ AZ_COMMAND = "$ErrorActionPreference='Stop'; Install-Module -Name Az -Repository
 def open_url(url):
     if not url.startswith("https://"):
         raise ValueError("Expected HTTPS download.")
-    response = urlopen(Request(url, headers={"User-Agent": "TridentsTuxTools/0.6"}), timeout=60)
+    response = urlopen(Request(url, headers={"User-Agent": "TridentsTuxTools/0.6"}), timeout=60, context=tls_context())
     if not response.url.startswith("https://"):
         response.close()
         raise ValueError("Insecure download redirect.")

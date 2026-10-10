@@ -10,6 +10,12 @@ from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
 
 
+try:
+    from .runtime import tls_context
+except ImportError:
+    from runtime import tls_context
+
+
 class Links(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -58,7 +64,7 @@ def resolve_url(source, arch, fetch):
 
 
 def open_url(url):
-    response = urlopen(Request(url, headers={"User-Agent": "TridentsTuxTools/0.2"}), timeout=60)
+    response = urlopen(Request(url, headers={"User-Agent": "TridentsTuxTools/0.2"}), timeout=60, context=tls_context())
     if urlsplit(response.url).scheme != "https":
         response.close()
         raise ValueError("Download redirected to an insecure URL.")
@@ -117,8 +123,20 @@ def main():
     parser.add_argument("--name", required=True)
     parser.add_argument("--url", required=True)
     parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--check-download", action="store_true", help="Check official URL and AppImage header without installing")
     args = parser.parse_args()
-    install(args.name, args.url, args.root)
+    if args.check_download:
+        def fetch(url):
+            with open_url(url) as response:
+                return response.read(8 * 1024 * 1024).decode("utf-8")
+        url = resolve_url(args.url, architecture(), fetch)
+        with open_url(url) as response:
+            header = response.read(12)
+        if header[:4] != b"\x7fELF" or header[8:11] not in {b"AI\x01", b"AI\x02"}:
+            raise ValueError("The download is not an AppImage.")
+        print("HTTPS download and AppImage header verified")
+    else:
+        install(args.name, args.url, args.root)
 
 
 if __name__ == "__main__":
