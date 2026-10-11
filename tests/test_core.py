@@ -73,7 +73,7 @@ class CoreTests(unittest.TestCase):
             original = [{"name": "My tool", "kind": "package", "source": "git", "category": "Custom", "favourite": True}]
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 2, "entries": original}))
             entries = core.load_catalogue(root)
-            self.assertEqual([e.name for e in entries], ["My tool", "CaramelPopKern", "KamaKiriStudio", *[e.name for e in core.BELT_APPS + core.ADMIN_APPS + core.DEV_APPS + core.EDITOR_APPS + core.CREATIVE_APPS + core.EXTRA_APPS]])
+            self.assertEqual([e.name for e in entries], ["My tool", "CaramelPopKern", "KamaKiriStudio", *[e.name for e in core.BELT_APPS + core.ADMIN_APPS + core.DEV_APPS + core.EDITOR_APPS + core.CREATIVE_APPS + core.EXTRA_APPS + core.PROTON_APPS]])
             self.assertTrue(entries[0].favourite)
             self.assertEqual(entries[0].category, "Custom")
             core.save_catalogue(entries[:-1], root)
@@ -152,7 +152,7 @@ class CoreTests(unittest.TestCase):
             root = Path(folder)
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 3, "entries": []}))
             entries = core.load_catalogue(root)
-            self.assertEqual(entries, core.BELT_APPS + core.ADMIN_APPS + core.DEV_APPS + core.EDITOR_APPS + core.CREATIVE_APPS + core.EXTRA_APPS)
+            self.assertEqual(entries, core.BELT_APPS + core.ADMIN_APPS + core.DEV_APPS + core.EDITOR_APPS + core.CREATIVE_APPS + core.EXTRA_APPS + core.PROTON_APPS)
             core.save_catalogue(entries[:-1], root)
             self.assertEqual(core.load_catalogue(root), entries[:-1])
 
@@ -161,7 +161,7 @@ class CoreTests(unittest.TestCase):
             root = Path(folder)
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 4, "entries": []}))
             entries = core.load_catalogue(root)
-            self.assertEqual([e.name for e in entries], ["PuTTY", "Graft", "Zed", "Obsidian", "Affinity · Wine installer", "ArtCraft · Linux setup", *[e.name for e in core.EXTRA_APPS]])
+            self.assertEqual([e.name for e in entries], ["PuTTY", "Graft", "Zed", "Obsidian", "Affinity · Wine installer", "ArtCraft · Linux setup", *[e.name for e in core.EXTRA_APPS + core.PROTON_APPS]])
             self.assertEqual(entries[0].category, "MSP/Admin")
             core.save_catalogue(entries, root)
             self.assertEqual(core.load_catalogue(root), entries)
@@ -173,7 +173,7 @@ class CoreTests(unittest.TestCase):
             root = Path(folder)
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 5, "entries": []}))
             entries = core.load_catalogue(root)
-            self.assertEqual(entries, core.DEV_APPS + core.EDITOR_APPS + core.CREATIVE_APPS + core.EXTRA_APPS)
+            self.assertEqual(entries, core.DEV_APPS + core.EDITOR_APPS + core.CREATIVE_APPS + core.EXTRA_APPS + core.PROTON_APPS)
             self.assertEqual(entries[0].category, "Dev/AI")
             self.assertEqual(core.install_steps(entries[0])[0].command[-1], "@nanonets/graft")
             core.save_catalogue(entries, root)
@@ -186,7 +186,7 @@ class CoreTests(unittest.TestCase):
             root = Path(folder)
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 6, "entries": []}))
             entries = core.load_catalogue(root)
-            self.assertEqual(entries, core.EDITOR_APPS + core.CREATIVE_APPS + core.EXTRA_APPS)
+            self.assertEqual(entries, core.EDITOR_APPS + core.CREATIVE_APPS + core.EXTRA_APPS + core.PROTON_APPS)
             self.assertEqual([e.category for e in entries[:2]], ["Dev/AI", "Utilities"])
             core.save_catalogue(entries, root)
             self.assertEqual(core.load_catalogue(root), entries)
@@ -198,7 +198,7 @@ class CoreTests(unittest.TestCase):
             root = Path(folder)
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 7, "entries": []}))
             entries = core.load_catalogue(root)
-            self.assertEqual(entries, core.CREATIVE_APPS + core.EXTRA_APPS)
+            self.assertEqual(entries, core.CREATIVE_APPS + core.EXTRA_APPS + core.PROTON_APPS)
             for entry in core.CREATIVE_APPS[1:]:
                 entry.validate()
                 with self.assertRaisesRegex(ValueError, "guided setup"):
@@ -221,7 +221,7 @@ class CoreTests(unittest.TestCase):
             root = Path(folder)
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 8, "entries": []}))
             entries = core.load_catalogue(root)
-            self.assertEqual(entries, core.EXTRA_APPS)
+            self.assertEqual(entries, core.EXTRA_APPS + core.PROTON_APPS)
             core.save_catalogue(entries, root)
             self.assertEqual(core.load_catalogue(root), entries)
             core.save_catalogue([], root)
@@ -232,7 +232,7 @@ class CoreTests(unittest.TestCase):
             root = Path(folder)
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 9, "entries": [{"name": "Affinity", "kind": "guide", "source": "https://github.com/seapear/AffinityOnLinux", "favourite": True, "category": "Creativity"}]}))
             entries = core.load_catalogue(root)
-            self.assertEqual(len(entries), 1)
+            self.assertEqual(len(entries), 1 + len(core.PROTON_APPS))
             self.assertEqual(entries[0].kind, "git")
             self.assertTrue(entries[0].terminal)
             self.assertTrue(entries[0].favourite)
@@ -257,7 +257,7 @@ class CoreTests(unittest.TestCase):
             root = Path(folder)
             root.joinpath("catalogue.json").write_text(json.dumps({"version": 10, "entries": [{"name": "Brave Origin", "kind": "guide", "source": "https://brave.com/origin/linux/", "favourite": True}]}))
             entries = core.load_catalogue(root)
-            self.assertEqual(len(entries), 1)
+            self.assertEqual(len(entries), 1 + len(core.PROTON_APPS))
             entry = entries[0]
             self.assertTrue(entry.favourite)
             self.assertTrue(entry.terminal)
@@ -276,6 +276,26 @@ class CoreTests(unittest.TestCase):
         wireshark = next(e for e in core.BELT_APPS if e.name == "Wireshark")
         self.assertEqual(core.package_name(wireshark, "pacman"), "wireshark-qt")
         self.assertEqual(core.package_name(wireshark, "apt-get"), "wireshark")
+
+    def test_proton_migration_preserves_custom_entries_and_removals(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            custom = core.Entry("Family app", "package", "git", favourite=True)
+            root.joinpath("catalogue.json").write_text(json.dumps({"version": 11, "entries": [custom.__dict__]}))
+            entries = core.load_catalogue(root)
+            self.assertEqual(entries, [custom, *core.PROTON_APPS])
+            self.assertEqual(len({core.entry_key(e) for e in core.PROTON_APPS}), len(core.PROTON_APPS))
+            core.save_catalogue([custom], root)
+            self.assertEqual(core.load_catalogue(root), [custom])
+
+    def test_proton_web_and_setup_entries_never_have_install_plans(self):
+        for entry in core.PROTON_APPS:
+            entry.validate()
+            if entry.kind in {"web", "guide"}:
+                with self.assertRaises(ValueError):
+                    core.install_steps(entry)
+            else:
+                self.assertEqual(core.install_steps(entry)[-1].command[-1], entry.source)
 
 
 if __name__ == "__main__":

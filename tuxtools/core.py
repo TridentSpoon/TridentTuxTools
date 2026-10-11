@@ -40,10 +40,10 @@ class Entry:
         elif self.kind == "npm":
             if not re.fullmatch(r"(?:@[a-z0-9._-]+/)?[a-z0-9][a-z0-9._-]*", self.source):
                 raise ValueError("Enter one npm package name.")
-        elif self.kind in {"appimage", "guide"}:
+        elif self.kind in {"appimage", "guide", "web"}:
             url = urlsplit(self.source)
             if url.scheme != "https" or not url.hostname or url.username or url.password:
-                raise ValueError("Use an HTTPS AppImage URL or the official Cursor download page.")
+                raise ValueError("Use an HTTPS download, setup or website URL.")
         elif self.kind == "builtin":
             if self.source != "powershell":
                 raise ValueError("Unknown built-in installer.")
@@ -96,6 +96,33 @@ EXTRA_APPS = [
     Entry("Microsoft 365 · Bottles setup", "guide", "https://github.com/bottlesdevs/programs/blob/main/Software/microsoft365business.yml", "Experimental Bottles Business/Enterprise recipes · Microsoft licence required · use supported Soda runner", category="Utilities"),
 ]
 
+PROTON_APPS = [
+    Entry("Proton Mail + Calendar", "flatpak", "me.proton.Mail", "Encrypted email and calendar · community Flatpak · desktop trial, then eligible paid plan", category="Proton / Privacy"),
+    Entry("Proton VPN", "flatpak", "com.protonvpn.www", "Private VPN · community Flatpak with sandbox limitations · official native setup in More", category="Proton / Privacy"),
+    Entry("Proton Pass", "flatpak", "me.proton.Pass", "Encrypted password manager · community Flatpak · browser extension available separately", category="Proton / Privacy"),
+    Entry("Proton Mail Bridge", "flatpak", "ch.protonmail.protonmail-bridge", "Use encrypted mail with Thunderbird and other clients · paid Proton Mail plan required · community Flatpak", category="Proton / Privacy"),
+    Entry("Proton Authenticator", "guide", "https://proton.me/authenticator/download", "Official Linux DEB/RPM downloads · two-factor codes · no Proton account required", category="Proton / Privacy"),
+    Entry("Proton Meet", "guide", "https://proton.me/meet/download", "Private video meetings · official Linux DEB/RPM downloads · also available in your browser", category="Proton / Privacy"),
+    Entry("Proton Drive CLI", "guide", "https://proton.me/support/drive-cli", "Official Linux command-line client · download and account setup instructions · not a desktop sync app", category="Proton / Privacy"),
+    Entry("Proton Calendar", "web", "https://calendar.proton.me", "Encrypted calendar in your browser · desktop calendar is included in Proton Mail", category="Proton / Privacy"),
+    Entry("Proton Drive", "web", "https://drive.proton.me", "Encrypted cloud files in your browser · use Drive CLI for Linux terminal access", category="Proton / Privacy"),
+    Entry("Proton Docs", "web", "https://docs.proton.me", "Encrypted collaborative documents in your browser · part of Proton Drive", category="Proton / Privacy"),
+    Entry("Proton Sheets", "web", "https://docs.proton.me", "Encrypted spreadsheets · choose New spreadsheet in the Docs dashboard", category="Proton / Privacy"),
+    Entry("Proton Wallet", "web", "https://wallet.proton.me", "Self-custody Bitcoin wallet in your browser", category="Proton / Privacy"),
+    Entry("Lumo by Proton", "web", "https://lumo.proton.me", "Private AI assistant in your browser", category="Proton / Privacy"),
+    Entry("Standard Notes", "flatpak", "org.standardnotes.standardnotes", "Encrypted notes · part of the Proton family · community Flatpak", category="Proton / Privacy"),
+    Entry("SimpleLogin", "web", "https://app.simplelogin.io", "Email aliases · part of the Proton family · browser dashboard and optional extensions", category="Proton / Privacy"),
+]
+
+# Docs and Sheets share a dashboard but remain separate selectable catalogue entries.
+PROTON_DOWNLOADS = {
+    "me.proton.Mail": "https://proton.me/mail/download",
+    "com.protonvpn.www": "https://protonvpn.com/support/linux-vpn-setup",
+    "me.proton.Pass": "https://proton.me/pass/download",
+    "ch.protonmail.protonmail-bridge": "https://proton.me/mail/bridge",
+    "org.standardnotes.standardnotes": "https://standardnotes.com/download",
+}
+
 DEFAULTS = [
     Entry("Set the Table · AutoFSTAB", "git", "https://github.com/TridentSpoon/set-the-table.git", "An auto-mount FSTAB assistant", favourite=True),
     Entry("N-Able TuxControl", "git", "https://github.com/TridentSpoon/NAble-TuxControl.git", "N-able Take Control for Linux", favourite=True),
@@ -109,13 +136,13 @@ DEFAULTS = [
     Entry("Lutris", "flatpak", "net.lutris.Lutris", "Manage games and compatibility tools", category="Gaming"),
     Entry("Steam", "flatpak", "com.valvesoftware.Steam", "Steam games and Proton", category="Gaming"),
     Entry("TMOG", "appimage", "https://tmog.org/rtm/downloads/TaskManagerOG-1.0.0-x86_64.AppImage", "Task Manager OG · portable AppImage · glibc 2.35+", category="Utilities"),
-] + PUBLIC_APPS + BELT_APPS + ADMIN_APPS + DEV_APPS + EDITOR_APPS + CREATIVE_APPS + EXTRA_APPS
+] + PUBLIC_APPS + BELT_APPS + ADMIN_APPS + DEV_APPS + EDITOR_APPS + CREATIVE_APPS + EXTRA_APPS + PROTON_APPS
 
-CATEGORIES = ("Dev/AI", "Gaming", "Creativity", "Utilities", "MSP/Admin")
+CATEGORIES = ("Dev/AI", "Gaming", "Creativity", "Utilities", "MSP/Admin", "Proton / Privacy")
 
 
 def entry_key(entry):
-    return (entry.kind, entry.source)
+    return (entry.kind, entry.source, entry.name) if entry.kind == "web" else (entry.kind, entry.source)
 
 
 def data_dir():
@@ -134,7 +161,7 @@ def load_catalogue(root=None):
         entries.extend(Entry(**asdict(entry)) for entry in DEFAULTS if entry_key(entry) not in existing)
     else:
         existing = {entry_key(entry) for entry in entries}
-        additions = (PUBLIC_APPS if saved.get("version", 2) < 3 else []) + (BELT_APPS if saved.get("version", 2) < 4 else []) + (ADMIN_APPS if saved.get("version", 2) < 5 else []) + (DEV_APPS if saved.get("version", 2) < 6 else []) + (EDITOR_APPS if saved.get("version", 2) < 7 else []) + (CREATIVE_APPS if saved.get("version", 2) < 8 else []) + (EXTRA_APPS if saved.get("version", 2) < 9 else [])
+        additions = (PUBLIC_APPS if saved.get("version", 2) < 3 else []) + (BELT_APPS if saved.get("version", 2) < 4 else []) + (ADMIN_APPS if saved.get("version", 2) < 5 else []) + (DEV_APPS if saved.get("version", 2) < 6 else []) + (EDITOR_APPS if saved.get("version", 2) < 7 else []) + (CREATIVE_APPS if saved.get("version", 2) < 8 else []) + (EXTRA_APPS if saved.get("version", 2) < 9 else []) + (PROTON_APPS if saved.get("version", 2) < 12 else [])
         entries.extend(Entry(**asdict(entry)) for entry in additions if entry_key(entry) not in existing)
     # Upgrade the exact old Affinity guide while preserving user preferences.
     if isinstance(saved, list) or saved.get("version", 2) < 10:
@@ -174,7 +201,7 @@ def save_catalogue(entries, root=None):
     root = root or data_dir()
     root.mkdir(parents=True, exist_ok=True)
     temporary = root / "catalogue.json.tmp"
-    temporary.write_text(json.dumps({"version": 11, "entries": [asdict(entry) for entry in entries]}, indent=2) + "\n")
+    temporary.write_text(json.dumps({"version": 12, "entries": [asdict(entry) for entry in entries]}, indent=2) + "\n")
     temporary.replace(root / "catalogue.json")
 
 
@@ -259,6 +286,8 @@ def install_steps(entry, root=None, azure=False):
     """Build the complete single-click plan without downloading or executing it."""
     entry.validate()
     root = root or data_dir()
+    if entry.kind == "web":
+        raise ValueError("This is a browser app. Open its website.")
     if entry.kind == "guide":
         raise ValueError("This tool requires guided setup. Open its setup guide.")
     if entry.kind == "builtin":

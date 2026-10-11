@@ -97,6 +97,8 @@ def detect(entry, root=None):
         if executable:
             return Installation(True, "Brave Origin installed", command=[executable], files=[Path(executable).resolve()], scope="Brave Origin entrypoint")
         return Installation(detail="Brave Origin not detected")
+    if entry.kind == "web":
+        return Installation(detail="Browser app; no local installation required")
     if entry.kind == "guide":
         return Installation(detail="Guided setup; automatic detection unavailable")
     if entry.kind == "builtin":
@@ -115,7 +117,12 @@ def detect(entry, root=None):
                 result = query(["flatpak", "info", flag, "--show-location", entry.source])
                 if result.returncode == 0:
                     return Installation(True, f"Flatpak installed ({flag[2:]})", command=["flatpak", "run", flag, entry.source], scope="Flatpak deployment metadata")
-        ids = {"com.anydesk.Anydesk": ["anydesk.desktop"],
+        ids = {"me.proton.Mail": ["proton-mail.desktop", "me.proton.Mail.desktop"],
+               "me.proton.Pass": ["proton-pass.desktop", "me.proton.Pass.desktop"],
+               "com.protonvpn.www": ["proton.vpn.app.gtk.desktop", "protonvpn.desktop"],
+               "ch.protonmail.protonmail-bridge": ["protonmail-bridge.desktop"],
+               "org.standardnotes.standardnotes": ["standard-notes.desktop"],
+"com.anydesk.Anydesk": ["anydesk.desktop"],
                "com.rustdesk.RustDesk": ["rustdesk.desktop"],
                "com.discordapp.Discord": ["discord.desktop"],
                "io.github.shiftey.Desktop": ["github-desktop.desktop"],

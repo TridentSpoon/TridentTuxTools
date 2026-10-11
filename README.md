@@ -237,3 +237,25 @@ checks cover the application files and launcher, not the entire Wine prefix.
 Brave Origin clones the official `brave/install.sh` source repository and runs
 `env FLAVOR=origin sh install.sh`, equivalent to the official download command.
 It uses upstream package-manager setup and may request your password.
+
+### Proton privacy tools
+
+The **Proton / Privacy** category includes Mail + Calendar, VPN, Pass, Mail Bridge,
+Authenticator, Meet, Drive CLI, Calendar, Drive, Docs, Sheets, Wallet, Lumo,
+Standard Notes and SimpleLogin. Mail, VPN, Pass, Bridge and Standard Notes use
+community-maintained Flathub packages for single or bulk installation. Their More
+panels link to official Linux downloads/setup; Proton VPN's Flatpak has sandbox
+limitations, so use Proton's native instructions when full functionality is needed.
+Mail desktop requires an eligible paid plan after its trial; Bridge requires a paid
+Mail plan. Accounts and subscription features remain managed by Proton.
+
+Authenticator and Meet link to official DEB/RPM downloads. Drive CLI links to its
+Linux setup instructions. Browser services have **Open website** buttons and are
+excluded from bulk installs. Docs and Sheets share the Docs dashboard; create a
+spreadsheet there for Sheets. No unsupported Linux desktop client is implied.
+Sources: [Proton apps](https://protonapps.com/),
+[Drive CLI](https://proton.me/support/drive-cli),
+[Standard Notes](https://standardnotes.com/download).
+
+Category headers expand and collapse. Their state is kept while you search,
+select apps or refresh installed-app checks during the current session.

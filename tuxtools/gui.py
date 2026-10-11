@@ -23,6 +23,7 @@ class Window(Adw.ApplicationWindow):
         self.busy = False
         self.entries = []
         self.selected = set()
+        self.collapsed_categories = set()
         self.results = {}
         self.installations = {}
         self.integrity = {}
@@ -180,13 +181,17 @@ class Window(Adw.ApplicationWindow):
         visible = self.visible_entries()
         categories = list(core.CATEGORIES) + sorted({entry.category for entry in self.entries} - set(core.CATEGORIES))
         for category in categories:
-            group = Adw.PreferencesGroup(title=category)
+            group = Adw.PreferencesGroup()
             matching = [entry for entry in visible if entry.category == category]
             if not matching:
                 continue
             select = Gtk.Button(label="Select category", valign=Gtk.Align.CENTER)
             select.connect("clicked", lambda _, c=category: self.select_visible(c))
-            group.set_header_suffix(select)
+            section = Adw.ExpanderRow(title=category, subtitle=f"{len(matching)} tools",
+                                      expanded=category not in self.collapsed_categories)
+            section.add_suffix(select)
+            section.connect("notify::expanded", self.category_expanded, category)
+            group.add(section)
             self.catalogue.append(group)
             for entry in matching:
                 count += 1
@@ -200,7 +205,7 @@ class Window(Adw.ApplicationWindow):
                 row = Adw.ActionRow(title=entry.name, subtitle=subtitle)
                 row.set_use_markup(False)
                 row.set_subtitle_lines(2)
-                selected = Gtk.CheckButton(sensitive=entry.kind != "guide", active=key in self.selected, valign=Gtk.Align.CENTER, tooltip_text="Select for bulk installation")
+                selected = Gtk.CheckButton(sensitive=entry.kind not in {"guide", "web"}, active=key in self.selected, valign=Gtk.Align.CENTER, tooltip_text="Select for bulk installation")
                 selected.connect("toggled", self.selection_changed, entry)
                 row.add_prefix(selected)
                 favourite = Gtk.ToggleButton(icon_name="starred-symbolic" if entry.favourite else "non-starred-symbolic",
@@ -212,19 +217,25 @@ class Window(Adw.ApplicationWindow):
                     open_button = Gtk.Button(label="Open", valign=Gtk.Align.CENTER)
                     open_button.connect("clicked", lambda _, e=entry: self.open_app(e))
                     row.add_suffix(open_button)
-                button = Gtk.Button(label="Setup guide" if entry.kind == "guide" else "Install", valign=Gtk.Align.CENTER)
-                button.connect("clicked", lambda _, e=entry: Gio.AppInfo.launch_default_for_uri(e.source, None) if e.kind == "guide" else self.install_entries([e]))
+                button = Gtk.Button(label="Open website" if entry.kind == "web" else "Setup guide" if entry.kind == "guide" else "Install", valign=Gtk.Align.CENTER)
+                button.connect("clicked", lambda _, e=entry: Gio.AppInfo.launch_default_for_uri(e.source, None) if e.kind in {"guide", "web"} else self.install_entries([e]))
                 button.add_css_class("suggested-action")
                 row.add_suffix(button)
                 more = Gtk.Button(label="More", valign=Gtk.Align.CENTER)
                 more.connect("clicked", lambda _, e=entry: self.show_more(e))
                 row.add_suffix(more)
-                group.add(row)
+                section.add_row(row)
         if not count:
             self.catalogue.append(Gtk.Label(label="No matching tools. Use + to add a repository or app.", wrap=True))
         self.catalogue.set_sensitive(not self.busy)
         self.update_selection()
         self.update_more()
+
+    def category_expanded(self, section, _property, category):
+        if section.get_expanded():
+            self.collapsed_categories.discard(category)
+        else:
+            self.collapsed_categories.add(category)
 
     def build_more_panel(self):
         panel = Adw.ToolbarView()
@@ -293,8 +304,12 @@ class Window(Adw.ApplicationWindow):
             enterprise = Gtk.Button(label="Enterprise recipe")
             enterprise.connect("clicked", lambda *_: Gio.AppInfo.launch_default_for_uri("https://github.com/bottlesdevs/programs/blob/main/Software/microsoft365enterprise.yml", None))
             self.more_box.append(enterprise)
-        if entry.kind == "guide":
-            button = Gtk.Button(label="Open setup guide")
+        if entry.source in core.PROTON_DOWNLOADS:
+            official = Gtk.Button(label="Official Linux downloads / setup")
+            official.connect("clicked", lambda *_: Gio.AppInfo.launch_default_for_uri(core.PROTON_DOWNLOADS[entry.source], None))
+            self.more_box.append(official)
+        if entry.kind in {"guide", "web"}:
+            button = Gtk.Button(label="Open website" if entry.kind == "web" else "Open setup guide")
             button.connect("clicked", lambda *_: Gio.AppInfo.launch_default_for_uri(entry.source, None))
             self.more_box.append(button)
             edit_button = Gtk.Button(label="Edit source")
@@ -425,7 +440,7 @@ class Window(Adw.ApplicationWindow):
         self.review.set_sensitive(not self.busy)
 
     def select_visible(self, category=None):
-        self.selected.update(core.entry_key(entry) for entry in self.visible_entries() if entry.kind != "guide" and (category is None or entry.category == category))
+        self.selected.update(core.entry_key(entry) for entry in self.visible_entries() if entry.kind not in {"guide", "web"} and (category is None or entry.category == category))
         self.render()
 
     def clear_selected(self):
@@ -454,8 +469,8 @@ class Window(Adw.ApplicationWindow):
         dialog = Adw.MessageDialog(transient_for=self, heading="Edit tool" if entry else "Add a tool", body="Choose a source and give it a name.")
         form = Adw.PreferencesGroup()
         name = Adw.EntryRow(title="Name", text=entry.name if entry else "")
-        kind = Adw.ComboRow(title="Source type", model=Gtk.StringList.new(["Git repository", "Flatpak", "System package", "npm package", "Python library", "AppImage", "PowerShell recipe", "Setup guide"]))
-        kinds = ["git", "flatpak", "package", "npm", "python", "appimage", "builtin", "guide"]
+        kind = Adw.ComboRow(title="Source type", model=Gtk.StringList.new(["Git repository", "Flatpak", "System package", "npm package", "Python library", "AppImage", "PowerShell recipe", "Setup guide", "Browser app"]))
+        kinds = ["git", "flatpak", "package", "npm", "python", "appimage", "builtin", "guide", "web"]
         kind.set_selected(kinds.index(entry.kind) if entry else 0)
         source = Adw.EntryRow(title="HTTPS URL / Flatpak ID / package", text=entry.source if entry else "")
         description = Adw.EntryRow(title="Description", text=entry.description if entry else "")
