@@ -281,7 +281,7 @@ class Window(Adw.ApplicationWindow):
         entry = self.more_entry
         category = self.more_category or (entry.category if entry else None)
         if category:
-            variant = {"Gaming": "Gaming", "Dev/AI": "DevAI"}.get(category)
+            variant = {"Gaming": "Gaming", "Dev/AI": "DevAI", "Privacy": "Privacy"}.get(category)
             filename = f"{APP_ID}.{variant}.png" if variant else f"{APP_ID}.png"
             artwork = Gtk.Image.new_from_file(str(ASSETS / filename))
             artwork.set_pixel_size(220)

@@ -260,6 +260,6 @@ Sources: [Proton apps](https://protonapps.com/),
 All categories start collapsed when the app opens. Category headers expand and collapse. Their state is kept while you search,
 select apps or refresh installed-app checks during the current session.
 
-Expanding a category while More is open shows its Tux artwork there. Gaming and
-Dev/AI use their approved category images; other categories use the original Tux.
+Expanding a category while More is open shows its Tux artwork there. Gaming,
+Dev/AI and Privacy use their category images; other categories use the original Tux.
 Click an app’s More button to switch back to that app’s details.
