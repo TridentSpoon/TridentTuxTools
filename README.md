@@ -240,7 +240,7 @@ It uses upstream package-manager setup and may request your password.
 
 ### Proton privacy tools
 
-The **Proton / Privacy** category includes Mail + Calendar, VPN, Pass, Mail Bridge,
+The **Privacy** category includes Mail + Calendar, VPN, Pass, Mail Bridge,
 Authenticator, Meet, Drive CLI, Calendar, Drive, Docs, Sheets, Wallet, Lumo,
 Standard Notes and SimpleLogin. Mail, VPN, Pass, Bridge and Standard Notes use
 community-maintained Flathub packages for single or bulk installation. Their More
@@ -257,5 +257,5 @@ Sources: [Proton apps](https://protonapps.com/),
 [Drive CLI](https://proton.me/support/drive-cli),
 [Standard Notes](https://standardnotes.com/download).
 
-Category headers expand and collapse. Their state is kept while you search,
+All categories start collapsed when the app opens. Category headers expand and collapse. Their state is kept while you search,
 select apps or refresh installed-app checks during the current session.

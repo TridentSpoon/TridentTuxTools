@@ -97,21 +97,21 @@ EXTRA_APPS = [
 ]
 
 PROTON_APPS = [
-    Entry("Proton Mail + Calendar", "flatpak", "me.proton.Mail", "Encrypted email and calendar · community Flatpak · desktop trial, then eligible paid plan", category="Proton / Privacy"),
-    Entry("Proton VPN", "flatpak", "com.protonvpn.www", "Private VPN · community Flatpak with sandbox limitations · official native setup in More", category="Proton / Privacy"),
-    Entry("Proton Pass", "flatpak", "me.proton.Pass", "Encrypted password manager · community Flatpak · browser extension available separately", category="Proton / Privacy"),
-    Entry("Proton Mail Bridge", "flatpak", "ch.protonmail.protonmail-bridge", "Use encrypted mail with Thunderbird and other clients · paid Proton Mail plan required · community Flatpak", category="Proton / Privacy"),
-    Entry("Proton Authenticator", "guide", "https://proton.me/authenticator/download", "Official Linux DEB/RPM downloads · two-factor codes · no Proton account required", category="Proton / Privacy"),
-    Entry("Proton Meet", "guide", "https://proton.me/meet/download", "Private video meetings · official Linux DEB/RPM downloads · also available in your browser", category="Proton / Privacy"),
-    Entry("Proton Drive CLI", "guide", "https://proton.me/support/drive-cli", "Official Linux command-line client · download and account setup instructions · not a desktop sync app", category="Proton / Privacy"),
-    Entry("Proton Calendar", "web", "https://calendar.proton.me", "Encrypted calendar in your browser · desktop calendar is included in Proton Mail", category="Proton / Privacy"),
-    Entry("Proton Drive", "web", "https://drive.proton.me", "Encrypted cloud files in your browser · use Drive CLI for Linux terminal access", category="Proton / Privacy"),
-    Entry("Proton Docs", "web", "https://docs.proton.me", "Encrypted collaborative documents in your browser · part of Proton Drive", category="Proton / Privacy"),
-    Entry("Proton Sheets", "web", "https://docs.proton.me", "Encrypted spreadsheets · choose New spreadsheet in the Docs dashboard", category="Proton / Privacy"),
-    Entry("Proton Wallet", "web", "https://wallet.proton.me", "Self-custody Bitcoin wallet in your browser", category="Proton / Privacy"),
-    Entry("Lumo by Proton", "web", "https://lumo.proton.me", "Private AI assistant in your browser", category="Proton / Privacy"),
-    Entry("Standard Notes", "flatpak", "org.standardnotes.standardnotes", "Encrypted notes · part of the Proton family · community Flatpak", category="Proton / Privacy"),
-    Entry("SimpleLogin", "web", "https://app.simplelogin.io", "Email aliases · part of the Proton family · browser dashboard and optional extensions", category="Proton / Privacy"),
+    Entry("Proton Mail + Calendar", "flatpak", "me.proton.Mail", "Encrypted email and calendar · community Flatpak · desktop trial, then eligible paid plan", category="Privacy"),
+    Entry("Proton VPN", "flatpak", "com.protonvpn.www", "Private VPN · community Flatpak with sandbox limitations · official native setup in More", category="Privacy"),
+    Entry("Proton Pass", "flatpak", "me.proton.Pass", "Encrypted password manager · community Flatpak · browser extension available separately", category="Privacy"),
+    Entry("Proton Mail Bridge", "flatpak", "ch.protonmail.protonmail-bridge", "Use encrypted mail with Thunderbird and other clients · paid Proton Mail plan required · community Flatpak", category="Privacy"),
+    Entry("Proton Authenticator", "guide", "https://proton.me/authenticator/download", "Official Linux DEB/RPM downloads · two-factor codes · no Proton account required", category="Privacy"),
+    Entry("Proton Meet", "guide", "https://proton.me/meet/download", "Private video meetings · official Linux DEB/RPM downloads · also available in your browser", category="Privacy"),
+    Entry("Proton Drive CLI", "guide", "https://proton.me/support/drive-cli", "Official Linux command-line client · download and account setup instructions · not a desktop sync app", category="Privacy"),
+    Entry("Proton Calendar", "web", "https://calendar.proton.me", "Encrypted calendar in your browser · desktop calendar is included in Proton Mail", category="Privacy"),
+    Entry("Proton Drive", "web", "https://drive.proton.me", "Encrypted cloud files in your browser · use Drive CLI for Linux terminal access", category="Privacy"),
+    Entry("Proton Docs", "web", "https://docs.proton.me", "Encrypted collaborative documents in your browser · part of Proton Drive", category="Privacy"),
+    Entry("Proton Sheets", "web", "https://docs.proton.me", "Encrypted spreadsheets · choose New spreadsheet in the Docs dashboard", category="Privacy"),
+    Entry("Proton Wallet", "web", "https://wallet.proton.me", "Self-custody Bitcoin wallet in your browser", category="Privacy"),
+    Entry("Lumo by Proton", "web", "https://lumo.proton.me", "Private AI assistant in your browser", category="Privacy"),
+    Entry("Standard Notes", "flatpak", "org.standardnotes.standardnotes", "Encrypted notes · part of the Proton family · community Flatpak", category="Privacy"),
+    Entry("SimpleLogin", "web", "https://app.simplelogin.io", "Email aliases · part of the Proton family · browser dashboard and optional extensions", category="Privacy"),
 ]
 
 # Docs and Sheets share a dashboard but remain separate selectable catalogue entries.
@@ -138,7 +138,7 @@ DEFAULTS = [
     Entry("TMOG", "appimage", "https://tmog.org/rtm/downloads/TaskManagerOG-1.0.0-x86_64.AppImage", "Task Manager OG · portable AppImage · glibc 2.35+", category="Utilities"),
 ] + PUBLIC_APPS + BELT_APPS + ADMIN_APPS + DEV_APPS + EDITOR_APPS + CREATIVE_APPS + EXTRA_APPS + PROTON_APPS
 
-CATEGORIES = ("Dev/AI", "Gaming", "Creativity", "Utilities", "MSP/Admin", "Proton / Privacy")
+CATEGORIES = ("Dev/AI", "Gaming", "Creativity", "Utilities", "MSP/Admin", "Privacy")
 
 
 def entry_key(entry):
@@ -190,6 +190,10 @@ def load_catalogue(root=None):
                     entries.remove(entry)
                 else:
                     entries[entries.index(entry)] = replacement
+    if isinstance(saved, list) or saved.get("version", 2) < 13:
+        for entry in entries:
+            if entry.category == "Proton / Privacy":
+                entry.category = "Privacy"
     for entry in entries:
         entry.validate()
     return entries
@@ -201,7 +205,7 @@ def save_catalogue(entries, root=None):
     root = root or data_dir()
     root.mkdir(parents=True, exist_ok=True)
     temporary = root / "catalogue.json.tmp"
-    temporary.write_text(json.dumps({"version": 12, "entries": [asdict(entry) for entry in entries]}, indent=2) + "\n")
+    temporary.write_text(json.dumps({"version": 13, "entries": [asdict(entry) for entry in entries]}, indent=2) + "\n")
     temporary.replace(root / "catalogue.json")
 
 

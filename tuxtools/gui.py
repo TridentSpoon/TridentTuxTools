@@ -23,7 +23,7 @@ class Window(Adw.ApplicationWindow):
         self.busy = False
         self.entries = []
         self.selected = set()
-        self.collapsed_categories = set()
+        self.expanded_categories = set()
         self.results = {}
         self.installations = {}
         self.integrity = {}
@@ -188,7 +188,7 @@ class Window(Adw.ApplicationWindow):
             select = Gtk.Button(label="Select category", valign=Gtk.Align.CENTER)
             select.connect("clicked", lambda _, c=category: self.select_visible(c))
             section = Adw.ExpanderRow(title=category, subtitle=f"{len(matching)} tools",
-                                      expanded=category not in self.collapsed_categories)
+                                      expanded=category in self.expanded_categories)
             section.add_suffix(select)
             section.connect("notify::expanded", self.category_expanded, category)
             group.add(section)
@@ -233,9 +233,9 @@ class Window(Adw.ApplicationWindow):
 
     def category_expanded(self, section, _property, category):
         if section.get_expanded():
-            self.collapsed_categories.discard(category)
+            self.expanded_categories.add(category)
         else:
-            self.collapsed_categories.add(category)
+            self.expanded_categories.discard(category)
 
     def build_more_panel(self):
         panel = Adw.ToolbarView()
