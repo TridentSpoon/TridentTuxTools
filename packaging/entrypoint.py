@@ -35,8 +35,11 @@ elif sys.argv[1:2] == ['--smoke-test']:
                 child = child.get_next_sibling()
         section = find_section(window.catalogue)
         assert section is not None and not section.get_expanded()
+        window.split.set_show_sidebar(True)
         section.set_expanded(True)
         assert category in window.expanded_categories
+        assert window.more_category == category
+        assert window.more_box.get_first_child() is not None
         for entry in window.entries:
             window.show_more(entry)
         window.closing = True

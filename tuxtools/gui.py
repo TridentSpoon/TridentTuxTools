@@ -28,6 +28,7 @@ class Window(Adw.ApplicationWindow):
         self.installations = {}
         self.integrity = {}
         self.more_entry = None
+        self.more_category = None
         self.scanning = False
         self.include_azure = False
         self.gaming_active = False
@@ -234,6 +235,9 @@ class Window(Adw.ApplicationWindow):
     def category_expanded(self, section, _property, category):
         if section.get_expanded():
             self.expanded_categories.add(category)
+            if self.split.get_show_sidebar():
+                self.more_category = category
+                self.update_more()
         else:
             self.expanded_categories.discard(category)
 
@@ -255,6 +259,7 @@ class Window(Adw.ApplicationWindow):
 
     def show_more(self, entry):
         self.more_entry = entry
+        self.more_category = None
         if not self.split.get_show_sidebar() and not self.is_maximized():
             self.set_default_size(max(800, self.get_width()) + 360, max(820, self.get_height()))
         self.split.set_show_sidebar(True)
@@ -274,17 +279,23 @@ class Window(Adw.ApplicationWindow):
             self.more_box.remove(child)
             child = next_child
         entry = self.more_entry
+        category = self.more_category or (entry.category if entry else None)
+        if category:
+            variant = {"Gaming": "Gaming", "Dev/AI": "DevAI"}.get(category)
+            filename = f"{APP_ID}.{variant}.png" if variant else f"{APP_ID}.png"
+            artwork = Gtk.Image.new_from_file(str(ASSETS / filename))
+            artwork.set_pixel_size(220)
+            artwork.set_tooltip_text(f"{category} tools")
+            self.more_box.append(artwork)
+        if self.more_category:
+            title = Gtk.Label(label=self.more_category, xalign=0)
+            title.add_css_class("title-2")
+            self.more_box.append(title)
+            self.more_box.append(Gtk.Label(label="Choose More beside an app in this category for its details and installation options.", xalign=0, wrap=True))
+            return
         if entry is None:
             self.more_box.append(Gtk.Label(label="Choose More beside an app for its details.", wrap=True))
             return
-        category_artwork = {"Gaming": ("Gaming", "Tux knows how to game"),
-                            "Dev/AI": ("DevAI", "Tux fixes bugs and builds tools")}
-        if entry.category in category_artwork:
-            variant, description = category_artwork[entry.category]
-            artwork = Gtk.Image.new_from_file(str(ASSETS / f"{APP_ID}.{variant}.png"))
-            artwork.set_pixel_size(220)
-            artwork.set_tooltip_text(description)
-            self.more_box.append(artwork)
         for text, css in ((entry.name, "title-2"), (entry.description, None),
                           (f"{entry.category} · {entry.kind}", "dim-label"), (entry.source, None)):
             label = Gtk.Label(label=text, xalign=0, wrap=True, selectable=True)
