@@ -261,5 +261,5 @@ All categories start collapsed when the app opens. Category headers expand and c
 select apps or refresh installed-app checks during the current session.
 
 Expanding a category while More is open shows its Tux artwork there. Gaming,
-Dev/AI, Privacy and Creativity use their category images; other categories use the original Tux.
+Dev/AI, Privacy, Creativity and Utilities use their category images; other categories use the original Tux.
 Click an app’s More button to switch back to that app’s details.
