@@ -111,6 +111,9 @@ class Window(Adw.ApplicationWindow):
         box.append(log_group)
         self.status = Gtk.Label(label="Ready. Choose a tool or add an app.", xalign=0, wrap=True, selectable=True)
         log_group.add(self.status)
+        self.install_progress = Gtk.ProgressBar(show_text=True, visible=False)
+        self.progress_timer = None
+        log_group.add(self.install_progress)
         self.log = Gtk.TextView(editable=False, cursor_visible=False, monospace=True, wrap_mode=Gtk.WrapMode.WORD_CHAR)
         log_scroll = Gtk.ScrolledWindow(min_content_height=150)
         log_scroll.set_child(self.log)
@@ -549,6 +552,16 @@ class Window(Adw.ApplicationWindow):
         if errors:
             self.status.set_text("Cannot start installation. " + " · ".join(errors))
             return
+        needs_flatpak = any(step.command[:1] == ["pkexec"] and step.command[-1] == "flatpak" for _, steps in jobs for step in steps)
+        if needs_flatpak:
+            dialog = Adw.MessageDialog(transient_for=self, heading="Install Flatpak first?",
+                                      body="These apps need Flatpak. Your system package manager will install it with administrator authentication, then the selected apps will install for your account. On Garuda/Arch, this also performs a system upgrade to avoid a partial upgrade.")
+            dialog.add_response("cancel", "Cancel")
+            dialog.add_response("install", "Install Flatpak and apps")
+            dialog.set_close_response("cancel")
+            dialog.connect("response", lambda _, response: self.execute_queue(jobs) if response == "install" else None)
+            dialog.present()
+            return
         if not self.review.get_active():
             self.execute_queue(jobs)
             return
@@ -572,10 +585,12 @@ class Window(Adw.ApplicationWindow):
             return
         self.busy = True
         self.spinner.start()
+        self.start_progress()
         self.render()
 
         def progress(index, total, entry):
             GLib.idle_add(self.status.set_text, f"Installing {index}/{total}: {entry.name}…")
+            GLib.idle_add(self.install_progress.set_text, f"{index}/{total}: {entry.name} · working")
 
         def worker():
             results = core.run_queue(jobs, lambda line: GLib.idle_add(self.append_log, line), progress)
@@ -621,6 +636,7 @@ class Window(Adw.ApplicationWindow):
             return
         self.busy = True
         self.spinner.start()
+        self.start_progress()
         self.render()
         self.status.set_text(f"Working on {entry.name}…")
         self.append_log("\n$ " + shlex.join(command) + "\n")
@@ -634,9 +650,28 @@ class Window(Adw.ApplicationWindow):
             GLib.idle_add(self.finished, message)
         threading.Thread(target=worker, daemon=True).start()
 
+    def start_progress(self):
+        self.install_progress.set_visible(True)
+        self.install_progress.set_text("Working…")
+        self.install_progress.set_fraction(0)
+        if self.progress_timer is None:
+            self.progress_timer = GLib.timeout_add(100, self.pulse_progress)
+
+    def pulse_progress(self):
+        if not self.busy or self.closing:
+            self.progress_timer = None
+            return False
+        self.install_progress.pulse()
+        return True
+
     def finished(self, message):
         self.busy = False
         self.spinner.stop()
+        if self.progress_timer is not None:
+            GLib.source_remove(self.progress_timer)
+            self.progress_timer = None
+        self.install_progress.set_fraction(1)
+        self.install_progress.set_text(message)
         self.status.set_text(message)
         self.append_log(message + "\n")
         self.render()
@@ -686,6 +721,7 @@ class Window(Adw.ApplicationWindow):
         self.busy = True
         self.update_button.set_sensitive(False)
         self.spinner.start()
+        self.start_progress()
         self.render()
         self.status.set_text(f"Updating to {result.available}…")
         def worker():

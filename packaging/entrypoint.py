@@ -42,6 +42,13 @@ elif sys.argv[1:2] == ['--smoke-test']:
         assert window.more_box.get_first_child() is not None
         for entry in window.entries:
             window.show_more(entry)
+        window.busy = True
+        window.start_progress()
+        assert window.install_progress.get_visible()
+        assert window.pulse_progress()
+        window.finished("Regression check completed")
+        assert window.progress_timer is None
+        assert window.install_progress.get_fraction() == 1
         window.closing = True
         GLib.source_remove(window.gaming_timer)
         window.destroy()

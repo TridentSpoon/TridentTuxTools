@@ -312,7 +312,17 @@ def install_steps(entry, root=None, azure=False):
             raise ValueError("Interactive setup needs Konsole, GNOME Terminal, or xterm.")
         return steps
     if entry.kind == "flatpak":
-        return [Step(["flatpak", "remote-add", "--user", "--if-not-exists", "flathub", "https://flathub.org/repo/flathub.flatpakrepo"]),
+        prerequisites = []
+        if not shutil.which("flatpak"):
+            manager = package_manager()
+            executable = shutil.which(manager)
+            arguments = {"apt-get": ["install", "-y"], "dnf": ["install", "-y"],
+                         "pacman": ["-Syu", "--needed", "--noconfirm"],
+                         "zypper": ["--non-interactive", "install"]}[manager]
+            if not shutil.which("pkexec"):
+                raise ValueError("Flatpak is missing. Install flatpak using your OS package manager, then retry (administrator authentication helper pkexec is unavailable).")
+            prerequisites.append(Step(["pkexec", executable, *arguments, "--", "flatpak"]))
+        return prerequisites + [Step(["flatpak", "remote-add", "--user", "--if-not-exists", "flathub", "https://flathub.org/repo/flathub.flatpakrepo"]),
                 Step(plan(entry, "install", root)[0])]
     if entry.kind == "npm":
         return [Step(["npm", "install", "--global", "--prefix", str(Path.home() / ".local"), "--", entry.source])]
@@ -334,13 +344,18 @@ def terminal_command():
 
 
 def run_install(entry, steps, output, root=None):
-    for step in steps:
+    for index, step in enumerate(steps, 1):
+        output(f"Step {index}/{len(steps)}\n")
         command, cwd = step.command, step.cwd
         if step.git_installer:
             # Validate after cloning, before executing: reject missing scripts and escapes.
             command, cwd = plan(entry, "install", root)
             if entry.terminal:
                 run_in_terminal(command, cwd, output)
+                if entry.source == "https://github.com/TridentSpoon/KamaKiriStudio.git":
+                    from .installed import detect
+                    if not detect(entry, root).found:
+                        raise RuntimeError("KamaKiriStudio setup finished without an installed launcher. Check the terminal log and retry.")
                 if entry.source == "https://github.com/seapear/AffinityOnLinux.git":
                     from .installed import detect
                     if not detect(entry, root).found:
@@ -363,7 +378,10 @@ def run_in_terminal(command, cwd, output):
         output("Interactive setup is running in your terminal. Complete its prompts there.\n")
         run_plan([*launcher, *helper_command("terminal"), str(result), str(log), *command], cwd, output)
         if log.exists():
-            output(log.read_text(errors="replace"))
+            transcript = log.read_text(errors="replace")
+            output(transcript)
+            if re.search(r"(?im)^\s*Installation cancel(?:led|ed)[.!]?\s*$", transcript):
+                raise RuntimeError("Installation cancelled in the terminal; nothing was installed.")
         if not result.exists() or result.read_text().strip() != "0":
             raise RuntimeError("Terminal installer failed or the terminal was closed before completion.")
 

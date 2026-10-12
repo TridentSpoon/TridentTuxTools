@@ -1,5 +1,7 @@
 """Run an interactive installer and report its actual exit status to the GUI."""
 import subprocess
+import codecs
+import os
 try:
     from .runtime import host_environment
 except ImportError:
@@ -12,12 +14,21 @@ def main():
     result, log, *command = sys.argv[1:]
     code = 1
     try:
-        with Path(log).open("w") as stream:
-            with subprocess.Popen(command, env=host_environment(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                  text=True, errors="replace") as process:
-                for line in process.stdout:
-                    print(line, end="", flush=True)
-                    stream.write(line)
+        with Path(log).open("w") as stream, open("/dev/tty", "r") as keyboard:
+            with subprocess.Popen(command, env=host_environment(), stdin=keyboard, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                  ) as process:
+                decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+                while True:
+                    chunk = os.read(process.stdout.fileno(), 4096)
+                    if not chunk:
+                        break
+                    text = decoder.decode(chunk)
+                    print(text, end="", flush=True)
+                    stream.write(text)
+                    stream.flush()
+                tail = decoder.decode(b"", final=True)
+                print(tail, end="", flush=True)
+                stream.write(tail)
                 code = process.wait()
     finally:
         Path(result).write_text(str(code))

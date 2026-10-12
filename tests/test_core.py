@@ -142,7 +142,8 @@ class CoreTests(unittest.TestCase):
         self.assertNotIn("pkexec", steps[0].command)
 
     def test_flatpak_sets_up_user_flathub(self):
-        steps = core.install_steps(core.Entry("Steam", "flatpak", "com.valvesoftware.Steam"))
+        with patch.object(core.shutil, "which", return_value="/usr/bin/flatpak"):
+            steps = core.install_steps(core.Entry("Steam", "flatpak", "com.valvesoftware.Steam"))
         self.assertEqual(steps[0].command[:2], ["flatpak", "remote-add"])
         self.assertIn("--if-not-exists", steps[0].command)
         self.assertIn("--user", steps[1].command)
@@ -295,7 +296,25 @@ class CoreTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     core.install_steps(entry)
             else:
-                self.assertEqual(core.install_steps(entry)[-1].command[-1], entry.source)
+                with patch.object(core.shutil, "which", return_value="/usr/bin/flatpak"):
+                    self.assertEqual(core.install_steps(entry)[-1].command[-1], entry.source)
+
+    def test_missing_flatpak_bootstrap_on_arch_uses_full_upgrade(self):
+        def which(name):
+            return None if name == "flatpak" else "/usr/bin/" + name
+        with patch.object(core.shutil, "which", side_effect=which), patch.object(core, "package_manager", return_value="pacman"):
+            steps = core.install_steps(core.Entry("LocalSend", "flatpak", "org.localsend.localsend_app"))
+        self.assertEqual(steps[0].command, ["pkexec", "/usr/bin/pacman", "-Syu", "--needed", "--noconfirm", "--", "flatpak"])
+        self.assertEqual(steps[1].command[:2], ["flatpak", "remote-add"])
+
+    def test_terminal_cancellation_with_zero_exit_is_not_success(self):
+        def fake_run(command, cwd, output):
+            result = next(Path(part) for part in command if part.endswith("/result"))
+            result.write_text("0")
+            result.with_name("log").write_text("Welcome.\nInstallation cancelled.\n")
+        with patch.object(core, "terminal_command", return_value=["konsole", "-e"]), patch.object(core, "run_plan", side_effect=fake_run):
+            with self.assertRaisesRegex(RuntimeError, "Installation cancelled"):
+                core.run_in_terminal(["bash", "install.sh"], None, lambda _: None)
 
 
 if __name__ == "__main__":

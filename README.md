@@ -263,3 +263,10 @@ select apps or refresh installed-app checks during the current session.
 Expanding a category while More is open shows its Tux artwork there. Gaming,
 Dev/AI, Privacy, Creativity, Utilities and MSP/Admin use their category images; custom categories use the original Tux.
 Click an app’s More button to switch back to that app’s details.
+
+Missing Flatpak is detected before installation. Tux Tools offers to install it
+using the host package manager with administrator authentication; Arch/Garuda
+uses a full upgrade to avoid partial upgrades. A moving progress bar shows active
+work and the app's position in the install queue; upstream installers do not
+provide reliable percentages. Interactive installers accept keyboard input in
+the terminal. Cancelled setup is not counted as installed.
